@@ -30,6 +30,7 @@
     [realm commitWriteTransaction];
 
     MSTicket *ticket = [MSTicket new];
+    ticket.objectID = @"abc";
     MSContact *contact2 = [MSContact new];
     contact2.objectID = @"123";
     ticket.contact = contact2;

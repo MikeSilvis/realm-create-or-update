@@ -10,6 +10,10 @@
 
 @implementation MSTicket
 
++ (NSDictionary *)defaultPropertyValues {
+    return @{@"seat" : @""};
+}
+
 + (NSString *)primaryKey {
     return @"objectID";
 }

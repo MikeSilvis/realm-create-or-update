@@ -13,5 +13,6 @@
 
 @property (nonatomic, strong) MSContact *contact;
 @property (nonatomic, strong) NSString *objectID;
+@property (nonatomic, strong) NSString *seat;
 
 @end

@@ -25,19 +25,29 @@
     MSContact *contact = [MSContact new];
     contact.objectID = @"123";
 
-    [realm beginWriteTransaction];
-    [realm addObject:contact];
-    [realm commitWriteTransaction];
+    [realm transactionWithBlock:^{
+        [realm addOrUpdateObject:contact];
+    }];
 
     MSTicket *ticket = [MSTicket new];
     ticket.objectID = @"abc";
+
+    [realm transactionWithBlock:^{
+        [MSTicket createOrUpdateInDefaultRealmWithValue:ticket];
+    }];
+
+    MSTicket *ticket2 = [MSTicket objectForPrimaryKey:@"abc"];
     MSContact *contact2 = [MSContact new];
     contact2.objectID = @"123";
-    ticket.contact = contact2;
 
-    [realm beginWriteTransaction];
-    [MSTicket createOrUpdateInDefaultRealmWithValue:ticket];
-    [realm commitWriteTransaction];
+    [realm transactionWithBlock:^{
+        ticket2.seat = @"123";
+        ticket2.contact = contact2;
+
+        [MSTicket createOrUpdateInDefaultRealmWithValue:ticket2];
+    }];
+
+    NSLog(@"ticket id: %@", ticket);
 }
 
 @end

@@ -9,7 +9,7 @@
 #import "ViewController.h"
 #import "MSContact.h"
 #import "MSTicket.h"
-#import <Realm.h>
+#import <Realm/Realm.h>
 
 @interface ViewController ()
 
@@ -20,34 +20,73 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    RLMRealm *realm = [RLMRealm defaultRealm];
+    NSString *objectId = @"123";
 
-    MSContact *contact = [MSContact new];
-    contact.objectID = @"123";
+    RLMRealm *realmOne = [RLMRealm defaultRealm];
 
-    [realm transactionWithBlock:^{
-        [realm addOrUpdateObject:contact];
+    // Create a new ticket
+    MSTicket *ticketOne = [MSTicket new];
+    ticketOne.objectID = objectId;
+    ticketOne.seat = @"2";
+
+    [realmOne transactionWithBlock:^{
+        [MSTicket createOrUpdateInDefaultRealmWithValue:ticketOne];
     }];
 
-    MSTicket *ticket = [MSTicket new];
-    ticket.objectID = @"abc";
+    // Verify seat and id are stored
+    MSTicket *dbTicketOne = [MSTicket objectForPrimaryKey:objectId];
+    NSLog(@"initial creation and find of ticket objectID: %@ withSeat: %@", dbTicketOne.objectID, dbTicketOne.seat);
 
-    [realm transactionWithBlock:^{
-        [MSTicket createOrUpdateInDefaultRealmWithValue:ticket];
+    // Create a new ticket with the same objectID but no seat
+    MSTicket *ticketTwo = [MSTicket new];
+    ticketTwo.objectID = objectId;
+
+    [realmOne transactionWithBlock:^{
+        [MSTicket createOrUpdateInDefaultRealmWithValue:ticketTwo];
     }];
 
-    MSTicket *ticket2 = [MSTicket objectForPrimaryKey:@"abc"];
-    MSContact *contact2 = [MSContact new];
-    contact2.objectID = @"123";
+    // Seat is still found and persisted
+    MSTicket *dbTicketTwo = [MSTicket objectForPrimaryKey:objectId];
+    NSLog(@"Verify seat is still persisted even though we didnt add it again objectID: %@ seat: %@", dbTicketTwo.objectID, dbTicketTwo.seat);
 
-    [realm transactionWithBlock:^{
-        ticket2.seat = @"123";
-        ticket2.contact = contact2;
+    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    configuration.discretionary = YES;
 
-        [MSTicket createOrUpdateInDefaultRealmWithValue:ticket2];
+    NSURL *URL = [NSURL URLWithString:@"https://cloudsecurityalliance.org/csaguide.pdf"];
+    NSURLRequest *request = [NSURLRequest requestWithURL:URL];
+
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration];
+
+    NSURLSessionDownloadTask *downloadTask = [session downloadTaskWithRequest:request completionHandler:^(NSURL *location, NSURLResponse *response, NSError *error) {
+        RLMRealm *realmTwo = [RLMRealm defaultRealm];
+        NSData *myFile = [NSData dataWithContentsOfURL:location];
+
+        // Add PDF to db object
+        MSTicket *dbTicketThree = [MSTicket objectForPrimaryKey:objectId];
+        [realmTwo transactionWithBlock:^{
+            dbTicketThree.pdf = myFile;
+
+            [MSTicket createOrUpdateInDefaultRealmWithValue:dbTicketThree];
+        }];
+
+        // Find a new db object and see the pdf is stored
+        MSTicket *dbTicketFour = [MSTicket objectForPrimaryKey:objectId];
+        NSLog(@"after we added a PDF to the ticket: %@ seat: %@ length: %lu", dbTicketFour.objectID, dbTicketFour.seat, (unsigned long)dbTicketFour.pdf.length);
+
+        // Create a random new object & save
+        MSTicket *ticketThree = [MSTicket new];
+        ticketThree.objectID = objectId;
+
+        [realmTwo transactionWithBlock:^{
+            [MSTicket createOrUpdateInDefaultRealmWithValue:ticketThree];
+        }];
+
+        // Now fetch it and pdf is gone
+        MSTicket *dbTicketFive = [MSTicket objectForPrimaryKey:objectId];
+        NSLog(@"Now that we created and saved a new obj %@ seat: %@ and pdf %lu", dbTicketFive.objectID, dbTicketFive.seat, (unsigned long)dbTicketFive.pdf.length);
     }];
 
-    NSLog(@"ticket id: %@", ticket);
+    [downloadTask resume];
 }
 
 @end

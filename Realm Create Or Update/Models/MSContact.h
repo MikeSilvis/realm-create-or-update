@@ -6,7 +6,7 @@
 //  Copyright © 2015 Mike Silvis. All rights reserved.
 //
 
-#import "RLMObject.h"
+#import <Realm/RLMObject.h>
 
 @interface MSContact : RLMObject
 

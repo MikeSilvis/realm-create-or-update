@@ -11,7 +11,7 @@
 @implementation MSTicket
 
 + (NSDictionary *)defaultPropertyValues {
-    return @{@"seat" : @""};
+    return @{@"seat" : @"", @"pdf" : [NSData new]};
 }
 
 + (NSString *)primaryKey {
